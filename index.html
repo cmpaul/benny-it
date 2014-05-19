@@ -1,0 +1,185 @@
+<html>
+	<head>
+		<title>Benny It!</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+		<script src="https://www.youtube.com/iframe_api"></script>
+		<script>
+		  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		  ga('create', 'UA-27195150-1', 'productivist.com');
+		  ga('send', 'pageview');
+
+		</script>
+		<script>
+			var currently_playing = false;
+			var video;
+			var sound;
+			$(function() {
+				if ( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+					$('#mobile-sadness').show();
+					$('#success').hide();
+					return;
+				}
+				if (navigator.userAgent.toLowerCase().indexOf('chrome') === -1) {
+					$('#browser-warning').show();
+				}
+				var share_it = function(video_id) {
+					$("#share_link").attr("href", "http://www.productivist.com/benny_it/?video_id=" + video_id);
+					$("#share").show();
+				}
+
+				var benny_it = function() {
+					var video_id = $("#video_id").val();
+					if (!video_id) {
+						return;
+					}
+
+					if (currently_playing) {
+						video.stopVideo();
+						video = null;
+						sound.stopVideo();
+						$("#video").clear();
+						$("#share").hide();
+					}
+
+					var videoReady = false;
+					var soundReady = (typeof sound !== 'undefined' && typeof sound.playVideo === 'function');
+
+					var onBothReady = function() {
+						if (!videoReady || !soundReady) {
+							return;
+						}
+						currently_playing = true;
+						video.mute();
+						video.setPlaybackRate(2);
+						video.playVideo();
+						sound.unMute();
+						sound.playVideo();
+						share_it(video_id);
+					}
+
+					video = new YT.Player('video', {
+						height: '450',
+						width: '800',
+						videoId: video_id,
+						events: {
+							'onReady' : function(evt) {
+								videoReady = true;
+								onBothReady();
+							},
+							'onStateChange' : function(evt) {
+								if (evt.data === YT.PlayerState.ENDED) {
+									sound.stopVideo();
+								}
+								if (evt.data === YT.PlayerState.PAUSED) {
+									sound.pauseVideo();
+								}
+								if (evt.data === YT.PlayerState.PLAYING) {
+									sound.playVideo();
+								}
+								if (evt.data === YT.PlayerState.BUFFERING) {
+									sound.stopVideo();
+								}
+							}
+						}
+					});
+
+					if (!soundReady) {
+						sound = new YT.Player('sound', {
+							height: '0',
+							width: '0',
+							videoId: 'zuL687HGfjI',
+							events: {
+								'onReady' : function(evt) {
+									soundReady = true;
+									onBothReady();
+								},
+								'onStateChange' : function(evt) {
+									if (evt.data === YT.PlayerState.PLAYING) {
+										onBothReady();
+									}
+								}
+							}
+						});
+					}
+				};
+
+				$("#load_video").click(function(e) {
+					e.stopPropagation();
+					benny_it();
+					return false;
+				});
+
+				var params = {};
+				if (location.search) {
+				    var parts = location.search.substring(1).split('&');
+
+				    for (var i = 0; i < parts.length; i++) {
+				        var nv = parts[i].split('=');
+				        if (!nv[0]) continue;
+				        params[nv[0]] = nv[1] || true;
+				    }
+				}
+				var video_id = params.video_id;
+				if (!video_id) {
+					// $.ajax({
+					// 	url: "https://gdata.youtube.com/feeds/api/standardfeeds/most_popular",
+					// 	success: function(data) {
+					// 		var videos = $(data).find("entry");
+					// 		if (videos.length > 0) {
+					// 			var entryParts = $(videos[0]).find("id").text().split("/")
+					// 			var id = entryParts[entryParts.length - 1];
+					// 			$("#video_id").val(id);
+					// 		}
+					// 	}
+					// });
+					$('#video_id').val('4m1EFMoRFvY'); // All the single ladies!
+				} else {
+					$("#video_id").val(video_id);
+					setTimeout(benny_it, 200);
+				}
+			});
+		</script>
+		<style>
+			#mobile-sadness {
+				color: red;
+			}
+			#browser-warning {
+				border: 1px solid red;
+				margin: 10px;
+				padding: 10px;
+			}
+			body {
+				width: 100%;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Benny It!</h1>
+		<p>Because every video is funny when you watch it to the Benny Hill theme song!</p>
+		<div>
+			<div id="mobile-sadness" style="display: none;">
+				<h2>Sorry, YouTube doesn't allow autoplay of its videos on mobile devices... You'll have to check this out from a desktop browser.</h2>
+			</div>
+			<div id="success">
+				<div id="browser-warning" style="display: none;">
+					For the best viewing experience, open this page in a Chrome browser.
+				</div>
+				<form>
+					<label for="video_id">Enter a YouTube Video ID: </label>
+					<input type="text" name="video_id" id="video_id" />
+					<button id="load_video">Benny It!</button>
+				</form>
+				<div id="video"><img src="video_id.png" width="450"></div>
+				<div id="sound"></div>
+				<div id="share" style="display:none;"><p>Like this video to Benny Hill? Share it by copying <a id="share_link" href="">this link</a>.</div>
+				<p>Disclaimer: <em>Obviously I don't own any of the content here. I built this just to mess around with the YouTube JavaScript API (check out the source if you're interested).</em></p>
+				<p>I was inspired by <a href="https://www.youtube.com/watch?v=TRVaU9X0rOs">this video</a>. Pure genius!</p>
+				<p>More trivia: Did you know the Benny Hill Theme song is actually called <a href="http://en.wikipedia.org/wiki/Yakety_Sax">"Yakety Sax"</a>?</p>
+			</div>
+		</div>
+	</body>
+</html>
